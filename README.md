@@ -1,23 +1,56 @@
 # Slate
 
-A real-time workspace for writing, reviewing, and evolving documents together.
+A rich-text editor that keeps formatting close to the text you're working on.
 
-Slate starts with a single-user editor. The longer-term work is about what happens
-when a document changes: reviewing edits, comparing versions, and bringing work
-back together after people have edited separately.
+[Open the editor](https://relay-hacks16.vercel.app) · [Architecture](docs/architecture.md) · [Editor-engine decision](docs/adr/0001-editor-engine.md)
 
-## Status
+![Slate editor with selected bold text and its contextual formatting toolbar](docs/images/demo.jpg)
 
-Early development. The editor supports paragraphs, H1–H3, bold, italic, strike,
-inline code, lists, quotes, code blocks, links, horizontal rules, and undo/redo.
-Block controls sit above the document. Selecting text opens inline controls.
+Selecting text reveals inline controls; the captured phrase has bold formatting applied. Content is session-only.
 
-The workspace has light and dark themes and a collapsible sidebar. Document
-switching and sharing are not available. Content is kept in memory, so refreshing
-the page clears it. Real-time collaboration and storage are still planned.
+## The problem
 
-[Open Slate](https://relay-hacks16.vercel.app). The production site follows `main`;
-open pull requests have separate previews.
+Editing a document involves switching between writing, selecting text, and finding the right formatting command. Slate explores an interface where block controls stay above the document and inline controls appear with the selection.
+
+The current implementation is a single-user editor. Document review, persistence, and collaboration are future milestones.
+
+## Try it in one minute
+
+1. Open the editor and write a heading followed by a paragraph.
+2. Select a phrase to reveal the contextual toolbar. Apply bold or add a link.
+3. Turn another paragraph into a list or quote, then try undo and redo.
+4. Switch themes and collapse the sidebar to compare the writing space.
+
+Content currently stays in memory: refreshing clears the document.
+
+## Engineering work in this repository
+
+The project implements the workspace, document canvas, formatting controls, selection-state integration, and editor behavior tests. Tiptap and ProseMirror supply the editing engine, document model, transactions, and history.
+
+That boundary matters: the custom work is the interaction and integration layer around the engine. Storage and synchronization are separate responsibilities.
+
+## Architecture
+
+```text
+Next.js application
+  └─ Workspace and document canvas
+       └─ Editor feature
+            ├─ React formatting controls
+            ├─ Tiptap lifecycle, extensions and commands
+            └─ ProseMirror document, selection and history
+```
+
+The web app lives in `apps/web`; shared TypeScript configuration lives in `packages/config`. Feature directories separate the workspace shell from the document canvas and editor. There is no backend service in the current implementation.
+
+## Key decisions and tradeoffs
+
+- **Use an established editing engine.** Tiptap avoids implementing browser selection, clipboard behavior, and history from scratch. In exchange, extensions and dependency updates need compatibility checks.
+- **Keep document identity separate from the editor instance.** This leaves room for persistence without making the editor own storage. Serialization versions and migration tests become necessary when storage is introduced.
+- **Test editor behavior, then check browser interaction separately.** Automated tests cover content, formatting, links, selection state, and history. Native selection and focus still need real-browser validation.
+
+## Current limits
+
+Document switching, sharing, real-time collaboration, and persistent storage are not available. The sidebar and workspace are an early foundation for those features. The current application should be evaluated as an editor prototype.
 
 ## Run locally
 
