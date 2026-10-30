@@ -6,13 +6,27 @@ A rich-text editor that keeps formatting close to the text you're working on.
 
 ![Slate editor with selected bold text and its contextual formatting toolbar](docs/images/demo.jpg)
 
-Selecting text reveals inline controls; the captured phrase has bold formatting applied. Content is session-only.
+Selecting text reveals inline controls; the captured phrase has bold formatting applied. This screenshot predates local autosave; current save status appears in the footer.
+
+## Local autosave and recovery
+
+The workspace has light and dark themes and a collapsible sidebar. Document
+switching and sharing are not available. The current document is saved in this browser after a short pause in typing and
+restored on refresh. This is local storage, not cloud sync. Clearing site data
+removes it, and each browser and site address has its own copy. Real-time
+collaboration and server storage are still planned.
+
+The footer shows the actual save state. If storage is unavailable, a write fails,
+or saved data cannot be restored, a recovery notice offers a draft download.
+Unreadable records are left untouched. Another tab changing the saved record
+stops autosave; download the current draft before reloading. The title is saved
+with the document but remains a static heading in this phase.
 
 ## The problem
 
 Editing a document involves switching between writing, selecting text, and finding the right formatting command. Slate explores an interface where block controls stay above the document and inline controls appear with the selection.
 
-The current implementation is a single-user editor. Document review, persistence, and collaboration are future milestones.
+The current implementation is a single-user editor with browser-local persistence. Document review and collaboration are future milestones.
 
 ## Try it in one minute
 
@@ -21,7 +35,7 @@ The current implementation is a single-user editor. Document review, persistence
 3. Turn another paragraph into a list or quote, then try undo and redo.
 4. Switch themes and collapse the sidebar to compare the writing space.
 
-Content currently stays in memory: refreshing clears the document.
+Wait for **Saved locally**, then refresh to check that your document returns. Storage belongs to this browser and site address.
 
 ## Engineering work in this repository
 
@@ -45,12 +59,12 @@ The web app lives in `apps/web`; shared TypeScript configuration lives in `packa
 ## Key decisions and tradeoffs
 
 - **Use an established editing engine.** Tiptap avoids implementing browser selection, clipboard behavior, and history from scratch. In exchange, extensions and dependency updates need compatibility checks.
-- **Keep document identity separate from the editor instance.** This leaves room for persistence without making the editor own storage. Serialization versions and migration tests become necessary when storage is introduced.
+- **Keep persistence separate from the editor instance.** The documents feature validates and stores a versioned record while Tiptap owns live content. Unsupported records remain untouched; future schema changes require explicit migration tests.
 - **Test editor behavior, then check browser interaction separately.** Automated tests cover content, formatting, links, selection state, and history. Native selection and focus still need real-browser validation.
 
 ## Current limits
 
-Document switching, sharing, real-time collaboration, and persistent storage are not available. The sidebar and workspace are an early foundation for those features. The current application should be evaluated as an editor prototype.
+Document switching, sharing, cloud storage, and real-time collaboration are not available. Browser-local storage is not a backup: clearing site data removes it, quota restrictions can prevent saving, and lifecycle saves are best-effort. Cross-tab checks detect common conflicts but do not provide locking or merging.
 
 ## Run locally
 
@@ -79,7 +93,7 @@ introduced, and keep populated `.env` files out of Git.
 | `pnpm build`        | Create a production build                     |
 
 The Makefile provides the same checks. Tests cover editor content, formatting,
-selection state, links, and undo/redo. Browser checks are also needed for native
+selection state, links, undo/redo, and local save/recovery behavior. Browser checks are also needed for native
 selection, keyboard focus, and layout; jsdom cannot reproduce those fully.
 
 ## Repository
