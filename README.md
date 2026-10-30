@@ -1,16 +1,14 @@
 # Slate
 
-A real-time workspace for writing, reviewing, and evolving documents together.
+A rich-text editor that keeps formatting close to the text you're working on.
 
-Slate starts with a single-user editor. The longer-term work is about what happens
-when a document changes: reviewing edits, comparing versions, and bringing work
-back together after people have edited separately.
+[Open the editor](https://relay-hacks16.vercel.app) · [Architecture](docs/architecture.md) · [Editor-engine decision](docs/adr/0001-editor-engine.md)
 
-## Status
+![Slate editor with selected bold text and its contextual formatting toolbar](docs/images/demo.jpg)
 
-Early development. The editor supports paragraphs, H1–H3, bold, italic, strike,
-inline code, lists, quotes, code blocks, links, horizontal rules, and undo/redo.
-Block controls sit above the document. Selecting text opens inline controls.
+Selecting text reveals inline controls; the captured phrase has bold formatting applied. This screenshot predates local autosave; current save status appears in the footer.
+
+## Local autosave and recovery
 
 The workspace has light and dark themes and a collapsible sidebar. Document
 switching and sharing are not available. The current document is saved in this browser after a short pause in typing and
@@ -24,8 +22,49 @@ Unreadable records are left untouched. Another tab changing the saved record
 stops autosave; download the current draft before reloading. The title is saved
 with the document but remains a static heading in this phase.
 
-[Open Slate](https://relay-hacks16.vercel.app). The production site follows `main`;
-open pull requests have separate previews.
+## The problem
+
+Editing a document involves switching between writing, selecting text, and finding the right formatting command. Slate explores an interface where block controls stay above the document and inline controls appear with the selection.
+
+The current implementation is a single-user editor with browser-local persistence. Document review and collaboration are future milestones.
+
+## Try it in one minute
+
+1. Open the editor and write a heading followed by a paragraph.
+2. Select a phrase to reveal the contextual toolbar. Apply bold or add a link.
+3. Turn another paragraph into a list or quote, then try undo and redo.
+4. Switch themes and collapse the sidebar to compare the writing space.
+
+Wait for **Saved locally**, then refresh to check that your document returns. Storage belongs to this browser and site address.
+
+## Engineering work in this repository
+
+The project implements the workspace, document canvas, formatting controls, selection-state integration, and editor behavior tests. Tiptap and ProseMirror supply the editing engine, document model, transactions, and history.
+
+That boundary matters: the custom work is the interaction and integration layer around the engine. Storage and synchronization are separate responsibilities.
+
+## Architecture
+
+```text
+Next.js application
+  └─ Workspace and document canvas
+       └─ Editor feature
+            ├─ React formatting controls
+            ├─ Tiptap lifecycle, extensions and commands
+            └─ ProseMirror document, selection and history
+```
+
+The web app lives in `apps/web`; shared TypeScript configuration lives in `packages/config`. Feature directories separate the workspace shell from the document canvas and editor. There is no backend service in the current implementation.
+
+## Key decisions and tradeoffs
+
+- **Use an established editing engine.** Tiptap avoids implementing browser selection, clipboard behavior, and history from scratch. In exchange, extensions and dependency updates need compatibility checks.
+- **Keep persistence separate from the editor instance.** The documents feature validates and stores a versioned record while Tiptap owns live content. Unsupported records remain untouched; future schema changes require explicit migration tests.
+- **Test editor behavior, then check browser interaction separately.** Automated tests cover content, formatting, links, selection state, and history. Native selection and focus still need real-browser validation.
+
+## Current limits
+
+Document switching, sharing, cloud storage, and real-time collaboration are not available. Browser-local storage is not a backup: clearing site data removes it, quota restrictions can prevent saving, and lifecycle saves are best-effort. Cross-tab checks detect common conflicts but do not provide locking or merging.
 
 ## Run locally
 
